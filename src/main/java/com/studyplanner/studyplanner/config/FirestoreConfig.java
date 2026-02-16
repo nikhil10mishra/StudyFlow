@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
 
 @Configuration
@@ -17,14 +18,19 @@ public class FirestoreConfig {
 
         String firebaseConfig = System.getenv("FIREBASE_CONFIG");
 
-        if (firebaseConfig == null || firebaseConfig.isEmpty()) {
-            throw new IllegalStateException("FIREBASE_CONFIG environment variable not set");
-        }
+        GoogleCredentials credentials;
 
-        GoogleCredentials credentials =
-                GoogleCredentials.fromStream(
-                        new ByteArrayInputStream(firebaseConfig.getBytes(StandardCharsets.UTF_8))
-                );
+        if (firebaseConfig != null && !firebaseConfig.isBlank()) {
+            // Production (Render)
+            credentials = GoogleCredentials.fromStream(
+                    new ByteArrayInputStream(firebaseConfig.getBytes(StandardCharsets.UTF_8))
+            );
+        } else {
+            // Local development
+            credentials = GoogleCredentials.fromStream(
+                    new FileInputStream("firebase-service-account.json")
+            );
+        }
 
         FirestoreOptions options = FirestoreOptions.newBuilder()
                 .setCredentials(credentials)
